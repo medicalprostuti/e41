@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "The correct passive voice of 'Who taught you grammar'?",
+          options: {
+            a: "By whom you taught grammar?",
+            b: "By whom grammar was taught you?",
+            c: "By whom was you taught grammar?",
+            d: "By whom were you taught grammar?",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Who taught you grammar?</p><p>Past Indefinite Tense-এর 'Who' যুক্ত Interrogative Sentence-কে Passive করার নিয়ম: <b>By whom + were/was + Object (Subject হিসেবে) + V3 + ...?</b></p><p>এখানে Object 'you' Subject হওয়ায় Auxiliary verb 'were' বসবে।</p><p><b>Passive:</b> By whom were you taught grammar?</p>",
+        },
+        {
+          id: 2,
+          question: 'Change the voice of - "Who is calling me?"',
+          options: {
+            a: "By whom am I called?",
+            b: "By whom I am called?",
+            c: "By whom am I being called?",
+            d: "Whom am I called by?",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Who is calling me?</p><p>Present Continuous Tense-এর 'Who' যুক্ত Interrogative Sentence-কে Passive করার নিয়ম: <b>By whom + am/is/are + Object (Subject হিসেবে) + being + V3 + ...?</b></p><p>এখানে Object 'me' Subject 'I' হওয়ায় Auxiliary verb 'am' বসবে।</p><p><b>Passive:</b> By whom am I being called?</p>",
+        },
+        {
+          id: 3,
+          question:
+            'The best possible passive form of "We don\'t like idle people" is-',
+          options: {
+            a: "We are not liked by idle people",
+            b: "Idle people are not like us",
+            c: "Idle people are not liked by us",
+            d: "Idle people are not of our liking",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> We don't like idle people.</p><p>Present Indefinite Tense-এর Negative Sentence-কে Passive করার নিয়ম: <b>Object (Subject হিসেবে) + am/is/are + not + V3 + by + Subject (Object হিসেবে)</b></p><p><b>Passive:</b> Idle people are not liked by us.</p>",
+        },
+        {
+          id: 4,
+          question: 'Passive form of "Let her sing a song."',
+          options: {
+            a: "Let a song be sung by her.",
+            b: "Let a song be sang by her.",
+            c: "Let a song sing by her.",
+            d: "Let a song sung by her.",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Let her sing a song.</p><p>'Let' দিয়ে শুরু Imperative Sentence-কে Passive করার নিয়ম: <b>Let + Object + be + V3 + by + Subject (Object হিসেবে)</b></p><p><b>Passive:</b> Let a song be sung by her.</p>",
+        },
+        {
+          id: 5,
+          question: 'The correct passive form of "I can recite the poem."',
+          options: {
+            a: "Recitation of the poem is possible by me.",
+            b: "The poem could be recited by me.",
+            c: "The poem can be recited by me.",
+            d: "Recitation of the poem can be performed by me.",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> I can recite the poem.</p><p>Modal Auxiliary (can, could, may, etc.) যুক্ত বাক্যকে Passive করার নিয়ম: <b>Object + modal + be + V3 + by + Subject</b></p><p><b>Passive:</b> The poem can be recited by me.</p>",
+        },
+        {
+          id: 6,
+          question: "Which is the correct passive sentence?",
+          options: {
+            a: "The signal was opened by the traffic police.",
+            b: "The signal is being opened by the traffic police.",
+            c: "The signal was being opened by the traffic police.",
+            d: "The signal was to be opened by the traffic police.",
+          },
+          correct: "a",
+          explanation:
+            "<p>বাক্যটি Past Indefinite Tense-এর একটি সম্পূর্ণ ও সঠিক passive form। এর গঠন হলো: Subject (The signal) + was + V3 (opened) + by + agent। অন্যান্য অপশনগুলো ভিন্ন Tense বা কাঠামো নির্দেশ করে, যা ভুল নয় কিন্তু এটি সবচেয়ে সরল ও সাধারণ Passive বাক্য।</p>",
+        },
+        {
+          id: 7,
+          question: "Which is a passive sentence?",
+          options: {
+            a: "She was very talkative.",
+            b: "I feel a little humiliated.",
+            c: "Time passes very fast.",
+            d: "They are quite mistaken.",
+          },
+          correct: "d",
+          explanation:
+            "<p>Passive voice-এর গঠন হলো 'to be' verb + Past Participle (V3)। অপশন (d)-তে 'are' (to be verb) এবং 'mistaken' (mistake-এর V3) ব্যবহৃত হয়েছে। এখানে Subject 'They' কাজটি করছে না, বরং একটি ক্রিয়ার ফল ভোগ করছে।</p>",
+        },
+        {
+          id: 8,
+          question:
+            "The correct passive form of 'Take care of your health' is-",
+          options: {
+            a: "Let your health taken care of",
+            b: "Health is taken care by you",
+            c: "Let your health taken care",
+            d: "Let your health be taken care of",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Take care of your health.</p><p>Imperative Sentence-কে Passive করার নিয়ম: <b>Let + Object + be + V3</b>। এখানে 'take care of' একটি Phrasal verb হওয়ায় 'of' preposition-টি শেষে থেকে যাবে।</p><p><b>Passive:</b> Let your health be taken care of.</p>",
+        },
+        {
+          id: 9,
+          question:
+            "The teacher made him go outside of the class. (Passive voice?)",
+          options: {
+            a: "He was turned out of the class by the teacher",
+            b: "He was made to go outside of the class by the teacher",
+            c: "He had to go outside of the class made by the teacher",
+            d: "He was made outside of the class by the teacher",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> The teacher made him go outside...</p><p>Causative verb 'make' যুক্ত বাক্যে Active voice-এ Bare Infinitive (go) ব্যবহৃত হয়। Passive voice করার সময় এটি Full Infinitive (to go) হয়ে যায়।</p><p><b>Passive:</b> He was made to go outside of the class by the teacher.</p>",
+        },
+        {
+          id: 10,
+          question: "It is known to me how it was done by him. (Active voice?)",
+          options: {
+            a: "I know how he has done it",
+            b: "I knew how he had done it",
+            c: "I know how he did it",
+            d: "I knew how he did it",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Passive:</b> It is known to me how it was done by him.</p><p>প্রথম অংশ 'It is known to me' (Present Passive) এর Active হলো 'I know'। দ্বিতীয় অংশ 'how it was done by him' (Past Passive) এর Active হলো 'how he did it' (Past Active)।</p><p><b>Active:</b> I know how he did it.</p>",
+        },
+        {
+          id: 11,
+          question: "He decided to sell the house- passive voice?",
+          options: {
+            a: "It was decided by him to sell the house",
+            b: "He decided that the house shall to sold",
+            c: "He decided that the house is sold",
+            d: "He decided that the house is selling",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> He decided to sell the house.</p><p>Infinitive phrase ('to sell the house') যুক্ত বাক্যের Passive করার একটি সাধারণ পদ্ধতি হলো 'It is/was + V3 + Infinitive phrase' ব্যবহার করা।</p><p><b>Passive:</b> It was decided by him to sell the house.</p>",
+        },
+        {
+          id: 12,
+          question: "Correct passive: All his friends laughed at him.",
+          options: {
+            a: "He was laughed over by all his friends",
+            b: "He was laughed by all his friends",
+            c: "He was laughed at by all his friends",
+            d: "He was being laughed by all his friends",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> All his friends laughed at him.</p><p>'laughed at' একটি Phrasal verb। Passive voice-এ preposition 'at' মূল verb-এর সাথেই থাকে।</p><p><b>Passive:</b> He was laughed at by all his friends.</p>",
+        },
+        {
+          id: 13,
+          question: "Correct passive: Who opened the door?",
+          options: {
+            a: "By whom the door was opened?",
+            b: "By whom was opened the door?",
+            c: "The door was opened by whom?",
+            d: "By whom was the door opened?",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Who opened the door?</p><p>Interrogative Sentence-এ 'Who' পরিবর্তিত হয়ে 'By whom' হয় এবং Auxiliary verb (was) Subject (the door)-এর আগে বসে।</p><p><b>Passive:</b> By whom was the door opened?</p>",
+        },
+        {
+          id: 14,
+          question: "Correct passive: The peon opened the gate.",
+          options: {
+            a: "The gate is being opened by the peon",
+            b: "The gate was being opened by the peon",
+            c: "The gate was opened by the peon",
+            d: "The gate was to be opened by the peon",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> The peon opened the gate. (Past Indefinite)</p><p>Past Indefinite Tense-এর Passive গঠন: <b>Object + was/were + V3 + by + Subject</b></p><p><b>Passive:</b> The gate was opened by the peon.</p>",
+        },
+        {
+          id: 15,
+          question: "Who did this? (Passive voice?)",
+          options: {
+            a: "By whom was this done?",
+            b: "Who has done this?",
+            c: "By whom this has been done?",
+            d: "Whom did this?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Who did this?</p><p>'Who' পরিবর্তিত হয়ে 'By whom' হয়। Past Indefinite Tense অনুযায়ী Auxiliary verb 'was' Subject 'this'-এর আগে বসে।</p><p><b>Passive:</b> By whom was this done?</p>",
+        },
+        {
+          id: 16,
+          question: "Which is the correct passive sentence?",
+          options: {
+            a: "Who was it painted by?",
+            b: "With whom it is painted by?",
+            c: "By whom it is painted with?",
+            d: "By whom is it painted?",
+          },
+          correct: "d",
+          explanation:
+            "<p>Interrogative Passive Sentence-এর সঠিক গঠন হলো: <b>By whom + Auxiliary verb (is) + Subject (it) + V3 (painted)?</b> অপশন (d) এই গঠনটি সঠিকভাবে অনুসরণ করে।</p>",
+        },
+        {
+          id: 17,
+          question:
+            "Correct active of 'The wounded man was being helped by some boys?'",
+          options: {
+            a: "Some boys were helping the wounded man.",
+            b: "Someboys were helping the wounded man.",
+            c: "Some boys were helped the wounded man.",
+            d: "Some boys were being help the wounded man.",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Passive:</b> The wounded man was being helped...</p><p>এটি Past Continuous Tense-এর Passive। এর Active form হবে: <b>Subject + was/were + V-ing + Object</b>।</p><p><b>Active:</b> Some boys were helping the wounded man.</p>",
+        },
+        {
+          id: 18,
+          question: "The correct active of 'Promises should be kept' is-",
+          options: {
+            a: "You should keep your promises.",
+            b: "One should keep one's promises.",
+            c: "He should keep his promises.",
+            d: "One should keep his promises.",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Passive:</b> Promises should be kept.</p><p>যখন Passive voice-এ Agent উল্লেখ থাকে না, তখন Active voice-এ 'One', 'We', বা 'People'-এর মতো একটি সাধারণ Subject ব্যবহার করা হয়। 'One' যখন Subject হয়, তখন এর Possessive adjective 'one's' হয়।</p><p><b>Active:</b> One should keep one's promises.</p>",
+        },
+        {
+          id: 19,
+          question: "The correct passive form of 'Fayeza is singing a song.'",
+          options: {
+            a: "A song is being sung by Fayeza.",
+            b: "A song was sung by Fayeza.",
+            c: "A song is sang by Fayeza.",
+            d: "A song is sung by Fayeza",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Fayeza is singing a song. (Present Continuous)</p><p>Present Continuous Tense-এর Passive গঠন: <b>Object + am/is/are + being + V3 + by + Subject</b></p><p><b>Passive:</b> A song is being sung by Fayeza.</p>",
+        },
+        {
+          id: 20,
+          question: "He pleased us. (Passive voice?)",
+          options: {
+            a: "We were pleased with him",
+            b: "We are pleased by him",
+            c: "We are pleased with him",
+            d: "We will be pleased by him",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> He pleased us.</p><p>'please' verb-এর Passive voice-এ 'by' এর পরিবর্তে 'with' preposition ব্যবহৃত হয়। বাক্যটি Past Tense-এ থাকায় 'were' ব্যবহৃত হয়েছে।</p><p><b>Passive:</b> We were pleased with him.</p>",
+        },
+        {
+          id: 21,
+          question: "The correct passive form of 'Who baked the cake?' is-",
+          options: {
+            a: "Who the cake was baked?",
+            b: "By whom has the cake been baked?",
+            c: "By who was the cake baked?",
+            d: "By whom was the cake baked?",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Who baked the cake?</p><p>'Who' পরিবর্তিত হয়ে 'By whom' হয়। Past Indefinite Tense অনুযায়ী Auxiliary verb 'was' Subject 'the cake'-এর আগে বসে।</p><p><b>Passive:</b> By whom was the cake baked?</p>",
+        },
+        {
+          id: 22,
+          question:
+            '"Shubho ate four pieces of Hilsha fish at dinner." (Passive form?)',
+          options: {
+            a: "Four pieces of Hilsha fish at dinner were ate by Shubho.",
+            b: "At dinner ofur pieces of Hilsha fish Shubho ate.",
+            c: "Four pieces of Hilsha fish were eating by Shubho at dinner.",
+            d: "At dinner four pieces of Hilsha fish were eaten by Shubho.",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Shubho ate four pieces of Hilsha fish at dinner.</p><p>Past Indefinite Tense-এর Passive গঠনে 'was/were + V3' ব্যবহৃত হয়। 'ate'-এর V3 হলো 'eaten'।'At dinner' Adverbial Phrase-টি বাক্যের শুরুতে বা শেষে বসতে পারে।</p><p><b>Passive:</b> At dinner four pieces of Hilsha fish were eaten by Shubho.</p>",
+        },
+        {
+          id: 23,
+          question:
+            "Change the voice of - 'He did not give up the fight even though he was badly bruised.'",
+          options: {
+            a: "The fight did not give up by even though he was badly bruised",
+            b: "The fight had not give up by him even though he was badly bruised",
+            c: "The fight was not given up by him even though he was badly bruised",
+            d: "The fight was not giving up by him even though he was badly bruised.",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> He did not give up the fight...</p><p>প্রথম অংশটি Past Indefinite Tense-এ আছে। এর Passive form হবে 'was not given up'।'even though...' অংশটি অপরিবর্তিত থাকবে।</p><p><b>Passive:</b> The fight was not given up by him even though he was badly bruised.</p>",
+        },
+        {
+          id: 24,
+          question: '"Whom do you want"? (Passive?)',
+          options: {
+            a: "By whom you are wanted?",
+            b: "By whom are you wanted?",
+            c: "Whom is wanted by you?",
+            d: "Who is wanted by you?",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Whom do you want?</p><p>Active voice-এর 'Whom' (Object) Passive voice-এ Subject হিসেবে 'Who' হয়। Present Indefinite Tense অনুযায়ী Passive form হবে: <b>Who is wanted by you?</b></p>",
+        },
+        {
+          id: 25,
+          question: "Which is the correct passive sentence?",
+          options: {
+            a: "The meeting is to be reschedule",
+            b: "The meeting is to be rescheduled",
+            c: "The meeting is to rescheduled",
+            d: "The meeting to be rescheduled",
+          },
+          correct: "b",
+          explanation:
+            "<p>Infinitive-এর Passive form হলো 'to be + Past Participle (V3)'। এখানে সঠিক রূপটি হলো 'to be rescheduled'।'is to be rescheduled' বাক্যটিকে সম্পূর্ণ ও সঠিক করে।</p>",
+        },
+        {
+          id: 26,
+          question: "'Why are you doing this'- (Passive voice?)",
+          options: {
+            a: "Why this is done by you?",
+            b: "Why is this done by you?",
+            c: "Why is this being done by you?",
+            d: "By whom is this done?",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Why are you doing this? (Present Continuous)</p><p>Present Continuous Tense-এর Interrogative Passive form: <b>Why + is/am/are + Object + being + V3 + by + Subject?</b></p><p><b>Passive:</b> Why is this being done by you?</p>",
+        },
+        {
+          id: 27,
+          question: "How can you do this? (Passive?)",
+          options: {
+            a: "How could this be done by you?",
+            b: "How can this has done by you?",
+            c: "How can this be done by you?",
+            d: "How this can be done by you?",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> How can you do this?</p><p>Modal Auxiliary (can) যুক্ত Interrogative বাক্যের Passive form: <b>How + can + Object + be + V3 + by + Subject?</b></p><p><b>Passive:</b> How can this be done by you?</p>",
+        },
+        {
+          id: 28,
+          question:
+            'Choose the correct active voice of "The results were reported by the research assistants."',
+          options: {
+            a: "The results reported to the research assistants",
+            b: "The research assistants were reported the results",
+            c: "The research assistants report the results",
+            d: "The research assistants reported the results",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Passive:</b> The results were reported... (Past Indefinite)</p><p>Past Indefinite Tense-এর Active form: <b>Subject + V2 + Object</b></p><p><b>Active:</b> The research assistants reported the results.</p>",
+        },
+        {
+          id: 29,
+          question:
+            "Change the active voice into passive. 'I am to make a telephone call.'",
+          options: {
+            a: "A telephone call is to be made by me",
+            b: "A telephone call is to making by me",
+            c: "A telephone call will to make by me",
+            d: "A telephone call will to be made by me",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> I am to make a telephone call.</p><p>'to be verb + to + V1' কাঠামোর Passive form হলো: <b>Object + to be verb + to be + V3 + by + Subject</b>।</p><p><b>Passive:</b> A telephone call is to be made by me.</p>",
+        },
+        {
+          id: 30,
+          question: 'The passive form of "She does not like eating too much."',
+          options: {
+            a: "She does not like to have eaten too much",
+            b: "Eating too much is not liked by her",
+            c: "Too much eating is not to be liked by her",
+            d: "Eating is not liked much too by her",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> She does not like eating too much.</p><p>এখানে 'eating too much' একটি Gerund phrase, যা Object হিসেবে কাজ করছে। এটিকে Subject হিসেবে ব্যবহার করে Passive করা হয়।</p><p><b>Passive:</b> Eating too much is not liked by her.</p>",
+        },
+        {
+          id: 31,
+          question: "Do not close the door. (Passive form?)",
+          options: {
+            a: "Let not the door close",
+            b: "Let not the door be closed",
+            c: "Let not the door be close",
+            d: "Let not door closed",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> Do not close the door.</p><p>Negative Imperative Sentence-এর Passive করার নিয়ম: <b>Let not + Object + be + V3</b></p><p><b>Passive:</b> Let not the door be closed.</p>",
+        },
+        {
+          id: 32,
+          question:
+            'Passive voice of - "Didn\'t she know anything about the Sunderbans?"',
+          options: {
+            a: "Was nothing about the Sunderbans known to her?",
+            b: "Was anything about the Sunderbans known by her?",
+            c: "Were she not known anything about the Sunderbans?",
+            d: "Was the Sunderbans known by her?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Didn't she know anything...?</p><p>'know' verb-এর Passive-এ 'to' বসে। Negative Interrogative বাক্যে 'anything' পরিবর্তিত হয়ে 'nothing' হয় এবং বাক্যটি Affirmative Interrogative হয়ে যায়।</p><p><b>Passive:</b> Was nothing about the Sunderbans known to her?</p>",
+        },
+        {
+          id: 33,
+          question: "'I can not depend on what you say.' (Passive form?)",
+          options: {
+            a: "What you say can not be depended by me.",
+            b: "What is said by you can not be depended on by me.",
+            c: "I can not depend on what is said by you.",
+            d: "What is said can not depended on by me.",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> I can not depend on what you say.</p><p>Noun clause 'what you say'-কে Passive করে ('what is said by you') পুরো বাক্যের Subject বানানো হয়েছে এবং 'depend on' Phrasal verb-টিকেও Passive করা হয়েছে।</p><p><b>Passive:</b> What is said by you can not be depended on by me.</p>",
+        },
+        {
+          id: 34,
+          question:
+            "The passive form of 'We will not admit children under ten.'",
+          options: {
+            a: "Children under ten will not be admitted by us",
+            b: "Children under ten would not be admitted by us",
+            c: "Children under ten shall not be admitted by us",
+            d: "Children under ten should not be admitted by us",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> We will not admit children under ten.</p><p>Future Indefinite Tense-এর Passive গঠন: <b>Object + will not + be + V3 + by + Subject</b></p><p><b>Passive:</b> Children under ten will not be admitted by us.</p>",
+        },
+        {
+          id: 35,
+          question:
+            'The passive form of "Where will you spend your holidays?" is-',
+          options: {
+            a: "Where will your holidays be spent by you?",
+            b: "Where would your holidays be spent by you?",
+            c: "Where will your holidays spent by you?",
+            d: "Where your holidays will spent by you?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Where will you spend your holidays?</p><p>Future Indefinite Interrogative-এর Passive গঠন: <b>Where + will + Object + be + V3 + by + Subject?</b></p><p><b>Passive:</b> Where will your holidays be spent by you?</p>",
+        },
+        {
+          id: 36,
+          question: "Identify the correct passive form - 'Open the window'.",
+          options: {
+            a: "The window should be opened",
+            b: "Let the window be opened",
+            c: "Let the window be opened by you",
+            d: "The window must be opened",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> Open the window.</p><p>Imperative Sentence-এর Passive করার সবচেয়ে প্রচলিত নিয়ম হলো: <b>Let + Object + be + V3</b>।</p><p><b>Passive:</b> Let the window be opened.</p>",
+        },
+        {
+          id: 37,
+          question: "'The hut was burnt to ashes'. (Active voice?)",
+          options: {
+            a: "Ashes were burnt by the hut",
+            b: "Fire burned the hut to ashes",
+            c: "Fire burnt the hut to ashes",
+            d: "Fire burned the hut into ashes",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Passive:</b> The hut was burnt to ashes.</p><p>যেহেতু Passive voice-এ Agent উল্লেখ নেই, তাই একটি সাধারণ Agent (যেমন: Fire) ব্যবহার করা হবে। 'burnt' verb-এর Past form 'burnt' বা 'burned' দুটোই সঠিক, তবে এখানে 'burnt' ব্যবহার করা হয়েছে।</p><p><b>Active:</b> Fire burnt the hut to ashes.</p>",
+        },
+        {
+          id: 38,
+          question: "She played on the flute. (Passive form?)",
+          options: {
+            a: "The flute was played by her.",
+            b: "The flute was played on by her.",
+            c: "The flute was played to her.",
+            d: "The flute was being played by her.",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> She played on the flute.</p><p>'played on' একটি Phrasal verb। Passive voice-এ preposition 'on' মূল verb-এর সাথেই থাকে।</p><p><b>Passive:</b> The flute was played on by her.</p>",
+        },
+        {
+          id: 39,
+          question:
+            "Find out the active form of 'By whom can our country be saved?'",
+          options: {
+            a: "Who can save our country?",
+            b: "Our country has been saved by who?",
+            c: "Who save our country?",
+            d: "Who will save our country?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Passive:</b> By whom can our country be saved?</p><p>Passive voice-এর 'By whom' Active voice-এ 'Who' হয়। Modal Auxiliary 'can' অপরিবর্তিত থাকে।</p><p><b>Active:</b> Who can save our country?</p>",
+        },
+        {
+          id: 40,
+          question: "Change the voice: 'Nobody trusts a traitor.'",
+          options: {
+            a: "A traitor is trusted.",
+            b: "A traitor should not be trusted.",
+            c: "Everybody hates a traitor.",
+            d: "A traitor is not trusted by anybody.",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Nobody trusts a traitor.</p><p>'Nobody' থাকলে Passive voice-এ 'not' এবং 'anybody' ব্যবহার করা হয়।</p><p><b>Passive:</b> A traitor is not trusted by anybody.</p>",
+        },
+        {
+          id: 41,
+          question:
+            'Find out the correct passive form of "Who taught you French?"',
+          options: {
+            a: "By whom you were taught French?",
+            b: "By whom French was taught you?",
+            c: "French was taught you by whom?",
+            d: "By whom were you taught French?",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> Who taught you French?</p><p>'Who' পরিবর্তিত হয়ে 'By whom' হয়। 'you' Object-কে Subject করায় Auxiliary verb 'were' বসেছে এবং বাক্যটি Interrogative structure বজায় রেখেছে।</p><p><b>Passive:</b> By whom were you taught French?</p>",
+        },
+        {
+          id: 42,
+          question: 'Identify the correct passive form of "Do you know them"?',
+          options: {
+            a: "Would they be known by you?",
+            b: "Are they known with you?",
+            c: "Are they known to you?",
+            d: "Are they known by you?",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Do you know them?</p><p>'know' verb-এর Passive voice-এ 'by' এর পরিবর্তে 'to' preposition ব্যবহৃত হয়।</p><p><b>Passive:</b> Are they known to you?</p>",
+        },
+        {
+          id: 43,
+          question:
+            "Identify the right passive voice of 'It is impossible to do this.'",
+          options: {
+            a: "Doing this is impossible",
+            b: "This is impossible to be done",
+            c: "This is must be done",
+            d: "This can't be done",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> It is impossible to do this.</p><p>Infinitive phrase ('to do this') যুক্ত বাক্যের Passive করার সময় Infinitive-এর Object 'this' Subject হয় এবং Infinitive-টি 'to be done' হয়।</p><p><b>Passive:</b> This is impossible to be done.</p>",
+        },
+        {
+          id: 44,
+          question: '"Who planted this tree here"? (Passive voice?)',
+          options: {
+            a: "By whom was this tree planted here?",
+            b: "Who the tree had been planted hereby?",
+            c: "The tree was planted here by whom?",
+            d: "By whom had the tree been planted here?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Who planted this tree here?</p><p>'Who' পরিবর্তিত হয়ে 'By whom' হয়। Past Indefinite Tense অনুযায়ী Auxiliary verb 'was' Subject 'this tree'-এর আগে বসে।</p><p><b>Passive:</b> By whom was this tree planted here?</p>",
+        },
+        {
+          id: 45,
+          question:
+            "Choose the correct form (passive) of - Who will do the work?",
+          options: {
+            a: "Who will be done the work",
+            b: "Who will done the work",
+            c: "By whom will the work be done?",
+            d: "Whom will the work be done?",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Who will do the work?</p><p>Future Indefinite Interrogative-এর Passive form: <b>By whom + will + Object + be + V3?</b></p><p><b>Passive:</b> By whom will the work be done?</p>",
+        },
+        {
+          id: 46,
+          question: "People always remember patriots. (Best passive form?)",
+          options: {
+            a: "The patriots will always be remembered by people",
+            b: "The patriots are always being remembered",
+            c: "People are always remembered by the patriots",
+            d: "The patriots are always remembered by the people.",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> People always remember patriots. (Present Indefinite)</p><p>Passive form: <b>Object + are + always + V3 + by + Subject</b></p><p><b>Passive:</b> The patriots are always remembered by the people.</p>",
+        },
+        {
+          id: 47,
+          question: 'Which is the passive form of "Rice sells cheap"?',
+          options: {
+            a: "Rice is sold cheap",
+            b: "Rice is cheap when it is sold",
+            c: "Rice is being sold cheap",
+            d: "None of the above",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Rice sells cheap. (Quasi-Passive Sentence)</p><p>এই ধরনের বাক্যের একটি সাধারণ Passive form হলো: <b>Subject + is/are + V3 + Adjective</b>।</p><p><b>Passive:</b> Rice is sold cheap.</p>",
+        },
+        {
+          id: 48,
+          question: "The passive voice of 'She made me do the arduous job' is-",
+          options: {
+            a: "I was made do the arduous job by her",
+            b: "I was made do the arduous job",
+            c: "I was made to do the arduous job by her",
+            d: "I had been made to do the arduous job by her",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> She made me do the arduous job.</p><p>Causative verb 'make' যুক্ত বাক্যে Active voice-এ Bare Infinitive (do) ব্যবহৃত হলেও Passive voice-এ Full Infinitive (to do) ব্যবহৃত হয়।</p><p><b>Passive:</b> I was made to do the arduous job by her.</p>",
+        },
+        {
+          id: 49,
+          question: "Choose the correct passive form:",
+          options: {
+            a: "Sara bakes the cake",
+            b: "The cake was bake by Sara",
+            c: "The cake was baked by Sara",
+            d: "The cake was baking by Sara",
+          },
+          correct: "c",
+          explanation:
+            "<p>Passive voice-এর সঠিক গঠন হলো 'to be' verb (was) + Past Participle (baked)।</p><p><b>সঠিক বাক্য:</b> The cake was baked by Sara.</p>",
+        },
+        {
+          id: 50,
+          question: "Please grant me two days' leave. (Passive?)",
+          options: {
+            a: "Let me be granted two days' leave.",
+            b: "Let me two days' leave be granted me.",
+            c: "May I please be granted two days' leave?",
+            d: "I may be granted two days' leave.",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Please grant me two days' leave.</p><p>অনুরোধমূলক Imperative Sentence-কে 'Let' দিয়ে Passive করা যায়।</p><p><b>Passive:</b> Let me be granted two days' leave.</p>",
+        },
+        {
+          id: 51,
+          question: "By whom was this bird killed? (Active?)",
+          options: {
+            a: "Who killed this bird?",
+            b: "Who did kill this bird?",
+            c: "Who had killed this bird?",
+            d: "Who has killed this bird?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Passive:</b> By whom was this bird killed? (Past Indefinite)</p><p>Past Indefinite Tense-এর Active Interrogative form: <b>Who + V2 + Object?</b></p><p><b>Active:</b> Who killed this bird?</p>",
+        },
+        {
+          id: 52,
+          question: "Take this medicine on empty stomach. (Passive form?)",
+          options: {
+            a: "This medicine is taken on empty stomach.",
+            b: "Empty stomach is taken this medicine.",
+            c: "This medicine should be taken on empty stomach.",
+            d: "This medicine may be taken on empty stomach.",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Take this medicine on empty stomach.</p><p>উপদেশমূলক Imperative Sentence-এর Passive করার জন্য 'should be + V3' ব্যবহার করা হয়।</p><p><b>Passive:</b> This medicine should be taken on empty stomach.</p>",
+        },
+        {
+          id: 53,
+          question: "'I do not like puffed rice'. (Passive voice?)",
+          options: {
+            a: "Puffed rice not liked by me",
+            b: "Puffed rice did not liked by me",
+            c: "Puffed rice was not liked by me",
+            d: "Puffed rice is not liked by me",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> I do not like puffed rice. (Present Indefinite)</p><p>Passive form: <b>Object + is not + V3 + by + Subject</b></p><p><b>Passive:</b> Puffed rice is not liked by me.</p>",
+        },
+        {
+          id: 54,
+          question: "The passive form of 'Who gave you the pen?' is-",
+          options: {
+            a: "By whom were you got this pen?",
+            b: "By whom were you given the pen?",
+            c: "By whom was you given this pen?",
+            d: "By whom have you given this pen?",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> Who gave you the pen?</p><p>'Who' পরিবর্তিত হয়ে 'By whom' হয়। 'you' Object-কে Subject করায় Auxiliary verb 'were' বসেছে।</p><p><b>Passive:</b> By whom were you given the pen?</p>",
+        },
+        {
+          id: 55,
+          question: "Change the voice: 'Who is nursing the old man?'",
+          options: {
+            a: "By whom the old man is being nursed?",
+            b: "By whom is the old man being nursed?",
+            c: "By whom the old man was being nursed?",
+            d: "By whom the old man is being nursed?",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> Who is nursing the old man? (Present Continuous)</p><p>Passive form: <b>By whom + is + Object + being + V3?</b></p><p><b>Passive:</b> By whom is the old man being nursed?</p>",
+        },
+        {
+          id: 56,
+          question:
+            "Choose the correct active statement of 'You are requested not to smoke.'",
+          options: {
+            a: "No smoking is requested",
+            b: "Please do not smoke",
+            c: "You need not smoke",
+            d: "Smoke not is requested",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Passive:</b> You are requested not to smoke.</p><p>'You are requested not to' যুক্ত Passive-এর Active form সাধারণত 'Please do not' দিয়ে শুরু হয়।</p><p><b>Active:</b> Please do not smoke.</p>",
+        },
+        {
+          id: 57,
+          question: "My uncle promised me a present. (Passive voice?)",
+          options: {
+            a: "A present was promised by my uncle.",
+            b: "I was promised a present by my uncle.",
+            c: "I had been promised a present by my uncle.",
+            d: "I was promised by my uncle a present.",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> My uncle promised me a present.</p><p>বাক্যে দুটি Object ('me' এবং 'a present') থাকলে Indirect Object ('me')-কে Subject করে Passive করা হলে বাক্যটি অধিক স্বাভাবিক শোনায়।</p><p><b>Passive:</b> I was promised a present by my uncle.</p>",
+        },
+        {
+          id: 58,
+          question: "Which sentence cannot be made passive?",
+          options: {
+            a: "The news surprised me",
+            b: "Handle the box with care",
+            c: "A tree stood here",
+            d: "She gifted me a book",
+          },
+          correct: "c",
+          explanation:
+            "<p>Passive voice শুধুমাত্র Transitive verb (যে verb-এর Object থাকে) যুক্ত বাক্যের হয়। 'A tree stood here' বাক্যে 'stood' একটি Intransitive verb, যার কোনো Object নেই। তাই এর Passive voice করা যাবে না।</p>",
+        },
+        {
+          id: 59,
+          question:
+            'Choose the active form of "She was criticized for her failure."',
+          options: {
+            a: "Everyone criticized failure in her.",
+            b: "Her failure all criticized",
+            c: "She herself was criticizing her failure.",
+            d: "Everybody criticized her for her failure.",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Passive:</b> She was criticized for her failure.</p><p>যেহেতু Agent উল্লেখ নেই, Active voice-এ একটি সাধারণ Subject (যেমন: Everybody) ব্যবহার করতে হবে।</p><p><b>Active:</b> Everybody criticized her for her failure.</p>",
+        },
+        {
+          id: 60,
+          question:
+            "The active form of 'Why wasn't the matter brought to my notice?' is-",
+          options: {
+            a: "Why didn't you bring the matter to my notice?",
+            b: "Why you did not bringing the matter to my notice?",
+            c: "Why don't you bring the matter to my notice?",
+            d: "Why is the matter not brought to my notice?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Passive:</b> Why wasn't the matter brought...?</p><p>এটি Past Indefinite Tense-এর Negative Interrogative Passive। এর Active form-এ Agent হিসেবে 'you' ব্যবহার করা হয়েছে।</p><p><b>Active:</b> Why didn't you bring the matter to my notice?</p>",
+        },
+        {
+          id: 61,
+          question: "Who made the mistake? (Passive?)",
+          options: {
+            a: "By whom",
+            b: "By whom has the mistake been made?",
+            c: "By whom was the mistake made?",
+            d: "Why the mistake was made?",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Who made the mistake? (Past Indefinite)</p><p>Passive form: <b>By whom + was + Object + V3?</b></p><p><b>Passive:</b> By whom was the mistake made?</p>",
+        },
+        {
+          id: 62,
+          question:
+            "Choose the passive form of 'Somebody will clean the office tomorrow'.",
+          options: {
+            a: "The office must be cleaned tomorrow",
+            b: "The office will be cleaned tomorrow",
+            c: "The office has be cleaned tomorrow",
+            d: "The office should be cleaned tomorrow",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> Somebody will clean the office tomorrow.</p><p>Future Indefinite Tense-এর Passive গঠন: <b>Object + will be + V3</b>। 'by somebody' সাধারণত উহ্য থাকে।</p><p><b>Passive:</b> The office will be cleaned tomorrow.</p>",
+        },
+        {
+          id: 63,
+          question: "Identify the passive form of: Who has broken this jug?",
+          options: {
+            a: "By whom has this jug been broken?",
+            b: "By whom has this jug broken?",
+            c: "By whom this jug has been broken?",
+            d: "Whom has this jug been broken?",
+          },
+          correct: "a",
+          explanation:
+            "<p><b>Active:</b> Who has broken this jug? (Present Perfect)</p><p>Passive form: <b>By whom + has + Object + been + V3?</b></p><p><b>Passive:</b> By whom has this jug been broken?</p>",
+        },
+        {
+          id: 64,
+          question: "I know him. (Passive?)",
+          options: {
+            a: "He is known by me",
+            b: "He was known to me",
+            c: "He has been known by me",
+            d: "He is known to me",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> I know him.</p><p>'know' verb-এর Passive voice-এ 'by' এর পরিবর্তে 'to' preposition ব্যবহৃত হয়।</p><p><b>Passive:</b> He is known to me.</p>",
+        },
+        {
+          id: 65,
+          question:
+            "Give the correct passive form of- 'My teacher embodies all the good qualities'",
+          options: {
+            a: "All the good qualities are embodied by my teacher",
+            b: "All the good qualities are embodied in my teacher",
+            c: "All the good qualities are embodied to my teacher",
+            d: "All the good qualities are embodied on my teacher",
+          },
+          correct: "b",
+          explanation:
+            "<p><b>Active:</b> My teacher embodies all the good qualities.</p><p>'embody' verb-এর Passive voice-এ 'by' এর পরিবর্তে 'in' preposition ব্যবহৃত হয়।</p><p><b>Passive:</b> All the good qualities are embodied in my teacher.</p>",
+        },
+        {
+          id: 66,
+          question: "The correct passive form of - He is going to open a shop.",
+          options: {
+            a: "He is being gone to open a shop",
+            b: "A shop is being gone opened by him",
+            c: "A shop will be opened by him",
+            d: "A shop is going to be opened by him",
+          },
+          correct: "d",
+          explanation:
+            "<p><b>Active:</b> He is going to open a shop.</p><p>'going to' যুক্ত বাক্যের Passive form হলো 'going to be + V3'</p><p><b>Passive:</b> A shop is going to be opened by him.</p>",
+        },
+        {
+          id: 67,
+          question:
+            'The passive form of "Some children were helping the wounded man",',
+          options: {
+            a: "The wounded man was helped by some children.",
+            b: "The wounded man was helping some children.",
+            c: "The wounded man was being helped by some children.",
+            d: "The wounded man was to be helped by some children.",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> Some children were helping the wounded man. (Past Continuous)</p><p>Past Continuous Tense-এর Passive গঠন: <b>Object + was/were + being + V3 + by + Subject</b></p><p><b>Passive:</b> The wounded man was being helped by some children.</p>",
+        },
+        {
+          id: 68,
+          question: "'I know the fact'- (Passive voice?)",
+          options: {
+            a: "The fact is known by me",
+            b: "The fact is being known by me",
+            c: "The fact is known to me",
+            d: "The fact is known",
+          },
+          correct: "c",
+          explanation:
+            "<p><b>Active:</b> I know the fact.</p><p>'know' verb-এর Passive voice-এ 'by' এর পরিবর্তে 'to' preposition ব্যবহৃত হয়।</p><p><b>Passive:</b> The fact is known to me.</p>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
